@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2026 the llm-glasshouse authors.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     https://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<!--
+  测试专用日志配置。
+
+  为什么不能直接复用 main 的那份：那份的级别写成变量占位符、会从环境变量读，
+  于是本机导出了 GLASSHOUSE_LOG_LEVEL=ERROR 的人跑测试会挂。CLI 迁移后，
+  GlasshouseCliTest 有 4 条 stderr 断言（cost 未知维度、eval run 缺 dataset 参数、
+  回放文件不存在、回放文件不可读）已经从 System.err.println 改由 log.warn 输出，
+  断言能不能过取决于日志级别是否被打开。测试必须自洽，所以这里把级别写死为 WARN，
+  与环境解耦。生产行为（含 GLASSHOUSE_LOG_LEVEL 开关）仍由 main 那份配置负责。
+
+  注意：XML 注释里不允许出现连续两个半角连字符，写的时候别把命令行选项原样抄进来。
+-->
+<configuration>
+  <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
+    <target>System.err</target>
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} %-5level %logger{28} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <logger name="io.github.nephets.glasshouse" level="WARN"/>
+  <logger name="org.springframework" level="WARN"/>
+  <logger name="io.netty" level="WARN"/>
+  <logger name="reactor" level="WARN"/>
+
+  <root level="WARN">
+    <appender-ref ref="STDERR"/>
+  </root>
+</configuration>

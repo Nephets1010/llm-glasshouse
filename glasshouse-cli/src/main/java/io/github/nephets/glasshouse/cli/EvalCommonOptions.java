@@ -22,6 +22,8 @@ import java.util.List;
 
 import io.github.nephets.glasshouse.eval.dataset.DatasetRegistry;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -32,6 +34,8 @@ import org.springframework.ai.chat.prompt.Prompt;
  * <p>抽成独立类而不是放在 {@link EvalRunCommand} 里，是因为 {@link EvalCompareCommand} 需要完全相同的一套参数——两份拷贝迟早会漂移。
  */
 final class EvalCommonOptions {
+
+    private static final Logger log = LoggerFactory.getLogger(EvalCommonOptions.class);
 
     /** 评测集名称。 */
     @picocli.CommandLine.Option(
@@ -204,7 +208,7 @@ final class EvalCommonOptions {
         }
         Path replay = resolveReplayFile();
         if (replay != null && !java.nio.file.Files.isReadable(replay)) {
-            System.err.println("[glasshouse] 错误: 回放文件不存在或不可读: " + replay.toAbsolutePath());
+            log.warn("[glasshouse] 回放文件不存在或不可读: {}", replay.toAbsolutePath());
             throw new IllegalStateException("回放文件不可读: " + replay);
         }
         if (replay == null) {
@@ -217,16 +221,13 @@ final class EvalCommonOptions {
             }
         }
         if (replay == null) {
-            System.err.println(
-                    "[glasshouse] 错误: 未找到录制文件 eval-datasets/"
-                            + dataset
-                            + ".responses.jsonl。\n"
-                            + "          请二选一：\n"
-                            + "            1) 用 --replay 指定录制文件\n"
-                            + "            2) 用 --base-url 指定 OpenAI 兼容端点（会调真实模型并产生费用）\n"
-                            + "            3) 录制一份：glasshouse eval run --dataset "
-                            + dataset
-                            + " --base-url <url>");
+            log.warn(
+                    "[glasshouse] 未找到录制文件 eval-datasets/{}.responses.jsonl。请二选一："
+                            + "1) 用 --replay 指定录制文件；"
+                            + "2) 用 --base-url 指定 OpenAI 兼容端点（会调真实模型并产生费用）；"
+                            + "3) 录制一份：glasshouse eval run --dataset {} --base-url <url>",
+                    dataset,
+                    dataset);
             throw new IllegalStateException("没有可用的模型来源");
         }
         ReplayChatModel model = ReplayChatModel.fromFile(replay);

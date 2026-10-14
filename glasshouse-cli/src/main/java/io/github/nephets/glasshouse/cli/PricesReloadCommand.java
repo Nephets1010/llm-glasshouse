@@ -80,8 +80,7 @@ public final class PricesReloadCommand implements Callable<Integer> {
     @Override
     public Integer call() {
         if (file == null) {
-            log.warn("[glasshouse] prices reload 缺少 --file");
-            System.err.println("[glasshouse] 错误: 必须用 --file 指定价格表文件。");
+            log.warn("[glasshouse] 必须用 --file 指定价格表文件。");
             return GlasshouseCli.EXIT_USAGE_ERROR;
         }
         try (CliRuntime runtime = findRoot().newRuntime()) {
