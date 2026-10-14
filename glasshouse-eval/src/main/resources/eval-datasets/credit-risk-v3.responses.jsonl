@@ -1,0 +1,15 @@
+{"caseId": "cr-001", "content": "{\"conclusion\": \"已评估conclusion\", \"riskLevel\": \"已评估riskLevel\", \"suggestedLimit\": \"已评估suggestedLimit\"}\n评估依据：收入，负债，建议，额度。", "inputTokens": 1000, "outputTokens": 500}
+{"caseId": "cr-002", "content": "根据相关规定：收入，共同借款，风险。具体时限与条件以订单页面标注为准。如有疑问请联系人工客服。", "inputTokens": 1000, "outputTokens": 500}
+{"caseId": "cr-003", "content": "{\"conclusion\": \"已评估conclusion\", \"riskLevel\": \"已评估riskLevel\"}\n评估依据：经营期限，成立，风险，抵押。", "inputTokens": 1000, "outputTokens": 500}
+{"caseId": "cr-004", "content": "根据相关规定：逾期，征信，风险。具体时限与条件以订单页面标注为准。如有疑问请联系人工客服。", "inputTokens": 1000, "outputTokens": 500}
+{"caseId": "cr-005", "content": "根据相关规定：征信，最低还款，记录。具体时限与条件以订单页面标注为准。如有疑问请联系人工客服。", "inputTokens": 1000, "outputTokens": 500}
+{"caseId": "cr-006", "content": "根据相关规定：征信，查询，记录。具体时限与条件以订单页面标注为准。如有疑问请联系人工客服。", "inputTokens": 1000, "outputTokens": 500}
+{"caseId": "cr-007", "content": "根据相关规定：负债，月供，收入，建议。具体时限与条件以订单页面标注为准。如有疑问请联系人工客服。", "inputTokens": 1000, "outputTokens": 500}
+{"caseId": "cr-008", "content": "根据相关规定：年龄，退休，收入。具体时限与条件以订单页面标注为准。如有疑问请联系人工客服。", "inputTokens": 1000, "outputTokens": 500}
+{"caseId": "cr-009", "content": "根据相关规定：多头借贷，征信，风险。具体时限与条件以订单页面标注为准。如有疑问请联系人工客服。", "inputTokens": 1000, "outputTokens": 500}
+{"caseId": "cr-010", "content": "根据相关规定：欺诈，拒绝，风险。具体时限与条件以订单页面标注为准。如有疑问请联系人工客服。", "inputTokens": 1000, "outputTokens": 500}
+{"caseId": "cr-011", "content": "根据相关规定：利率，成本，不建议。具体时限与条件以订单页面标注为准。如有疑问请联系人工客服。", "inputTokens": 1000, "outputTokens": 500}
+{"caseId": "cr-012", "content": "根据相关规定：逾期，征信，天数。具体时限与条件以订单页面标注为准。如有疑问请联系人工客服。", "inputTokens": 1000, "outputTokens": 500}
+{"caseId": "cr-013", "content": "根据相关规定：覆盖倍数，收入，额度。具体时限与条件以订单页面标注为准。如有疑问请联系人工客服。", "inputTokens": 1000, "outputTokens": 500}
+{"caseId": "cr-014", "content": "根据相关规定：等额本息，月供，本金，利息。具体时限与条件以订单页面标注为准。如有疑问请联系人工客服。", "inputTokens": 1000, "outputTokens": 500}
+{"caseId": "cr-015", "content": "根据相关规定：首次，征信，可以，评估。具体时限与条件以订单页面标注为准。如有疑问请联系人工客服。", "inputTokens": 1000, "outputTokens": 500}

@@ -1,0 +1,61 @@
+# LLM 玻璃房演示应用配置
+#
+# ★ 零 API Key：模型由本进程内的 mock 服务提供（/mock/v1/chat/completions）。
+#   这样 README 的「30 秒上手」不需要任何凭据，也不会产生任何费用。
+
+server:
+  port: 8080
+
+spring:
+  application:
+    name: llm-glasshouse-demo
+  main:
+    banner-mode: off
+
+# ── Spring AI：指向本进程内的 mock 服务 ─────────────────────────────
+# api-key 是明显的占位值。mock 服务不校验它；换成真实端点时请用环境变量
+# OPENAI_API_KEY，且不要把它提交进 git。
+spring.ai.openai:
+  base-url: http://127.0.0.1:8080/mock
+  api-key: mock-not-a-real-key
+  chat:
+    options:
+      model: mock-chat
+      temperature: 0.0
+
+# ── LLM 玻璃房 ─────────────────────────────────────────────────────
+llm.glasshouse:
+  enabled: true
+  application-name: llm-glasshouse-demo
+  sample-ratio: 1.0
+  # 内存环形缓冲：默认 10 万条 span，够 demo 与本地开发用
+  ring-buffer-capacity: 100000
+  # PII 脱敏默认开启
+  redact-pii: true
+  redact-keep-tail: 4
+  # 完整 prompt 留痕默认关闭。打开前请确认脱敏规则覆盖了你关心的 PII 类型
+  record-payload-full: false
+  payload-max-length: 4000
+  # ★ 生产环境请配置 OTLP 端点，把数据导出到 Jaeger / Tempo / Grafana。
+  #   首版为了「开箱即得」默认不导出，数据落在内存缓冲里。
+  # otlp-endpoint: http://localhost:4318/v1/traces
+
+# ── demo 专用 ──────────────────────────────────────────────────────
+llm.glasshouse.demo:
+  base-url: http://127.0.0.1:8080/mock
+  model: mock-chat
+
+# ── Actuator：暴露玻璃房自己的健康检查 ─────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    io.github.nephets.glasshouse: INFO
+    org.springframework.ai: WARN

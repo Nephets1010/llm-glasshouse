@@ -1,0 +1,30 @@
+# 版权 2026 the llm-glasshouse authors.
+# Licensed under the Apache License, Version 2.0.
+#
+# ★ docker compose up 之后，8080 上就有完整的 LLM 玻璃房：
+#   - 模型由进程内 mock 服务提供，零 API Key
+#   - /_glasshouse/trace/{traceId} 直接看 span 树
+#   - /_glasshouse/cost?dimension=tenant 直接看五维归因
+services:
+  glasshouse:
+    build: .
+    image: llm-glasshouse:0.1.0
+    container_name: llm-glasshouse
+    ports:
+      - "8080:8080"
+    environment:
+      # 演示模式：模型走进程内 mock，不产生任何外部费用
+      SPRING_AI_OPENAI_API_KEY: mock-not-a-real-key
+      SPRING_AI_OPENAI_BASE_URL: http://127.0.0.1:8080/mock
+      LLM_GLASSHOUSE_ENABLED: "true"
+      LLM_GLASSHOUSE_RECORD_PAYLOAD_FULL: "false"
+    # 挂载价格表到容器外：调价不用重建镜像、不用重启容器
+    volumes:
+      - ./prices:/app/prices:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget -q -O- http://127.0.0.1:8080/actuator/health | grep -q UP"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s

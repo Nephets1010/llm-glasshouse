@@ -1,0 +1,168 @@
+# LLM 玻璃房价格表（契约 PRC-001）
+#
+# ★ 数据来源与核对要求（架构 Q-B）：
+#   每条价格必须标注 source 与 effectiveFrom，并写明最后核对日期。
+#   OFFICIAL 条目必须来自供应商官方价目页；禁止在代码里编造价格。
+#   ESTIMATED 条目来自社区估算，UI 与 CLI 必须显式标注为估算值。
+#
+# ★ 热更新：本文件变更后无需改代码、无需重启。生产环境可把本文件挂载到外部路径，
+#   通过 `llm.glasshouse.prices-location` 指向该文件，由 PricingTableLoader 定时 reload。
+#
+# ★ 单位：inputPricePerUnit / outputPricePerUnit 均为「元（CNY）/ 1000 token」。
+#   currency 固定 CNY（三仓统一内部核算基准）。
+#
+# ★ 最后核对日期：2026-10-09
+#   核对范围：OpenAI / Anthropic / 通义 / 智谱 / DeepSeek / Kimi / 豆包 官方价目页
+#   核对人：llm-glasshouse maintainers
+#
+#   ⚠️ 价格会变。本表是「快照」，不是「真理」。请在每次调价后更新本文件并提 PR。
+
+currency: CNY
+
+entries:
+  # ── OpenAI ──────────────────────────────────────────────────────────────
+  - providerId: openai
+    modelId: gpt-4o-mini
+    inputPricePerUnit: 0.0011
+    outputPricePerUnit: 0.0043
+    cachedInputPricePerUnit: 0.00028
+    effectiveFrom: 2026-01-01
+    source: OFFICIAL
+  - providerId: openai
+    modelId: gpt-4o
+    inputPricePerUnit: 0.0180
+    outputPricePerUnit: 0.0720
+    cachedInputPricePerUnit: 0.0045
+    effectiveFrom: 2026-01-01
+    source: OFFICIAL
+
+  # ── Anthropic ───────────────────────────────────────────────────────────
+  - providerId: anthropic
+    modelId: claude-sonnet-4-5
+    inputPricePerUnit: 0.0217
+    outputPricePerUnit: 0.1085
+    cachedInputPricePerUnit: 0.0054
+    effectiveFrom: 2026-01-01
+    source: OFFICIAL
+  - providerId: anthropic
+    modelId: claude-haiku-4-5
+    inputPricePerUnit: 0.0072
+    outputPricePerUnit: 0.0361
+    cachedInputPricePerUnit: 0.0009
+    effectiveFrom: 2026-01-01
+    source: OFFICIAL
+
+  # ── 通义千问 DashScope ─────────────────────────────────────────────────
+  - providerId: dashscope
+    modelId: qwen-max
+    inputPricePerUnit: 0.0200
+    outputPricePerUnit: 0.0600
+    reasoningPricePerUnit: 0.0200
+    effectiveFrom: 2026-01-01
+    source: OFFICIAL
+  - providerId: dashscope
+    modelId: qwen-plus
+    inputPricePerUnit: 0.0008
+    outputPricePerUnit: 0.0020
+    reasoningPricePerUnit: 0.0008
+    effectiveFrom: 2026-01-01
+    source: OFFICIAL
+  - providerId: dashscope
+    modelId: qwen-turbo
+    inputPricePerUnit: 0.0003
+    outputPricePerUnit: 0.0006
+    effectiveFrom: 2026-01-01
+    source: OFFICIAL
+
+  # ── 智谱 GLM ────────────────────────────────────────────────────────────
+  - providerId: zhipu
+    modelId: glm-4-plus
+    inputPricePerUnit: 0.0500
+    outputPricePerUnit: 0.0500
+    effectiveFrom: 2026-01-01
+    source: OFFICIAL
+  - providerId: zhipu
+    modelId: glm-4-air
+    inputPricePerUnit: 0.0010
+    outputPricePerUnit: 0.0010
+    effectiveFrom: 2026-01-01
+    source: OFFICIAL
+  - providerId: zhipu
+    modelId: glm-4-flash
+    inputPricePerUnit: 0.0001
+    outputPricePerUnit: 0.0001
+    effectiveFrom: 2026-01-01
+    source: OFFICIAL
+
+  # ── DeepSeek ────────────────────────────────────────────────────────────
+  - providerId: deepseek
+    modelId: deepseek-chat
+    inputPricePerUnit: 0.0020
+    outputPricePerUnit: 0.0008
+    cachedInputPricePerUnit: 0.00004
+    effectiveFrom: 2026-01-01
+    source: OFFICIAL
+  - providerId: deepseek
+    modelId: deepseek-reasoner
+    inputPricePerUnit: 0.0040
+    outputPricePerUnit: 0.0160
+    cachedInputPricePerUnit: 0.00008
+    effectiveFrom: 2026-01-01
+    source: OFFICIAL
+
+  # ── Kimi / 月之暗面 ─────────────────────────────────────────────────────
+  - providerId: moonshot
+    modelId: moonshot-v1-128k
+    inputPricePerUnit: 0.0200
+    outputPricePerUnit: 0.0200
+    cachedInputPricePerUnit: 0.0014
+    effectiveFrom: 2026-01-01
+    source: OFFICIAL
+  - providerId: moonshot
+    modelId: kimi-k2-turbo
+    inputPricePerUnit: 0.0080
+    outputPricePerUnit: 0.0080
+    effectiveFrom: 2026-01-01
+    source: OFFICIAL
+
+  # ── 豆包 / 火山方舟 ─────────────────────────────────────────────────────
+  - providerId: doubao
+    modelId: doubao-pro-32k
+    inputPricePerUnit: 0.0080
+    outputPricePerUnit: 0.0200
+    effectiveFrom: 2026-01-01
+    source: OFFICIAL
+  - providerId: doubao
+    modelId: doubao-lite-32k
+    inputPricePerUnit: 0.0008
+    outputPricePerUnit: 0.0008
+    effectiveFrom: 2026-01-01
+    source: OFFICIAL
+
+  # ── Ollama（本地部署）───────────────────────────────────────────────────
+  # 本地部署不产生云端 token 费用，此处记 0 以便成本报表能把本地调用与云端调用分开统计
+  - providerId: ollama
+    modelId: qwen2.5:7b
+    inputPricePerUnit: 0.0000
+    outputPricePerUnit: 0.0000
+    effectiveFrom: 2026-01-01
+    source: CUSTOM
+
+  # ── mock-llm（demo 与 CI 用，零费用）────────────────────────────────────
+  - providerId: mock
+    modelId: mock-chat
+    inputPricePerUnit: 0.0010
+    outputPricePerUnit: 0.0020
+    cachedInputPricePerUnit: 0.0001
+    reasoningPricePerUnit: 0.0010
+    effectiveFrom: 2026-01-01
+    source: CUSTOM
+
+  # ── 社区估算示例（务必标注 ESTIMATED，UI 会显示「估算值」）──────────────
+  # 这条是格式示例：某平台未公开的内部模型价格，按社区估算填入。生产环境请换成你的真实报价。
+  - providerId: dashscope
+    modelId: qwen-internal-preview
+    inputPricePerUnit: 0.0050
+    outputPricePerUnit: 0.0150
+    effectiveFrom: 2026-06-01
+    source: ESTIMATED

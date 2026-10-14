@@ -1,0 +1,238 @@
+# 版权 2026 the llm-glasshouse authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# CI 回归门禁（架构 ③T04 / PRD 仓库③ P0-6）
+#
+# ★ 这个 workflow 是本仓「CI 门禁」卖点的落地处。它的行为完全由 CLI 的退出码驱动：
+#     exit 0 → 通过        exit 1 → 门禁不达标（流水线红）        exit 2 → 命令/配置写错
+#
+# 关键设计：评测走「录制回放」模式，不调用任何真实模型 API。
+#   理由：模型输出有随机性，实时调模型会让门禁随机变红，团队很快就会无视它。
+#   录制文件提交进 git，同一 commit 跑两次分数完全一致 —— 这才是门禁可信的前提。
+name: ci-gate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# 同一分支上新的 push 取消旧的运行，省 CI 配额
+concurrency:
+  group: ci-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: 回归门禁
+    runs-on: ubuntu-latest
+    # ★ 超时必须设：评测如果因网络/端点问题挂住，没有超时的 job 会一直占配额
+    timeout-minutes: 15
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      # ★ 必须带 fetch-depth: 0 —— 数据集版本号用 git commit sha 标识，
+      #   浅克隆会让 gitSha() 拿不到完整 sha，评测报告的溯源信息就废了
+      - name: 完整检出（数据集版本号依赖 git sha）
+        run: git fetch --unshallow || true
+
+      - name: 设置 JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+          cache: maven
+
+      - name: 构建
+        # ★ 不加 -Pfast：本地快速迭代用的 profile 在 CI 里必须关掉，
+      #   否则覆盖率门禁与 spotless 都会被跳过，「CI 全绿」就失去意义
+        run: mvn -B clean install -DskipTests
+
+      - name: 运行单元测试与覆盖率门禁
+        run: mvn -B verify
+
+      - name: 检查契约文件与三仓权威版本一致
+        # 契约漂移是最隐蔽的失败：代码能编译、单测全绿，但跨仓字段已经对不上了。
+        # 这里做一次显式比对，任何一方改了契约而没同步另外两方都会红。
+        run: |
+          set -euo pipefail
+          CONTRACT=contract/contract-v1.json
+          test -f "$CONTRACT" || { echo "找不到 $CONTRACT"; exit 1; }
+          python3 - "$CONTRACT" <<'PY'
+          import json, sys
+          with open(sys.argv[1], encoding="utf-8") as f:
+              spec = json.load(f)
+          required = {"CTX-001", "USG-001", "PRC-001", "EVT-001", "ERR-001", "SPN-001"}
+          missing = required - set(spec.get("contracts", {}))
+          if missing:
+              raise SystemExit(f"契约缺少必需的 contract id: {sorted(missing)}")
+          print("✓ 契约包含全部 6 个 contract id")
+          PY
+
+      - name: 评测回归门禁
+        id: eval_gate
+        run: |
+          set -uo pipefail
+          JAR=$(ls glasshouse-cli/target/*-cli.jar | head -1)
+          echo "使用 $JAR"
+
+          java -jar "$JAR" eval run \
+            --dataset customer-service-v1 \
+            --prompt-version "${GITHUB_SHA}" \
+            --gate "keywordRecall>0.95,containment=1.0" \
+            --out report/customer-service
+
+          code=$?
+          case "$code" in
+            0) echo "gate=pass" ;;
+            1) echo "gate=fail"
+               echo "::error::门禁未达标 —— 关键词召回率低于 0.95，或出现了禁答内容"
+               ;;
+            2) echo "::error::命令或配置有误（退出码 2）。这是命令写错了，不是效果不达标，请检查 --gate 表达式与回放文件路径"
+               ;;
+            *) echo "::error::非预期退出码 $code" ;;
+          esac
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          # ★ 无论结果如何都保留报告，失败时使用者要能立刻看到「哪条不达标」
+          exit 0
+
+      - name: 信贷风控回归门禁
+        id: eval_gate_credit
+        run: |
+          set -uo pipefail
+          JAR=$(ls glasshouse-cli/target/*-cli.jar | head -1)
+          java -jar "$JAR" eval run \
+            --dataset credit-risk-v3 \
+            --prompt-version "${GITHUB_SHA}" \
+            --gate "keywordRecall>0.9,containment=1.0" \
+            --out report/credit-risk
+          code=$?
+          if [ "$code" -eq 1 ]; then
+            echo "::error::信贷风控评测集门禁未达标"
+          elif [ "$code" -eq 2 ]; then
+            echo "::error::信贷评测命令/配置有误（退出码 2）"
+          fi
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: 上传评测报告
+        # ★ always()：门禁失败时报告依然要上传 —— 「变红了但不知道哪里变差」是最糟的体验
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-report-${{ github.run_id }}
+          path: report/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: 门禁结论写入 Job Summary
+        # ★ 报告贴在 PR 页面上，评审者不点开 artifact 就能看到结论
+        if: always()
+        run: |
+          set -uo pipefail
+          {
+            echo "## LLM 玻璃房 · CI 回归门禁"
+            echo
+            echo "| 评测集 | 退出码 | 结论 |"
+            echo "|---|---:|---|"
+            printf "| customer-service-v1 | %s | %s |\n" \
+              "${{ steps.eval_gate.outputs.exit_code }}" \
+              "${{ steps.eval_gate.outputs.exit_code == '0' && '✅ 通过' || '❌ 未达标' }}"
+            printf "| credit-risk-v3 | %s | %s |\n" \
+              "${{ steps.eval_gate_credit.outputs.exit_code }}" \
+              "${{ steps.eval_gate_credit.outputs.exit_code == '0' && '✅ 通过' || '❌ 未达标' }}"
+            echo
+            echo "完整报告见 artifact \`eval-report-${{ github.run_id }}\`。"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 门禁不达标时让流水线失败
+        # ★ 必须放在最后：前面所有步骤都 exit 0 只为保证报告能被上传，
+        #   真正决定红绿的是这一步。
+        #   退出码 2（配置错）同样让流水线红 —— 错的门禁比没有门禁更危险。
+        run: |
+          set -uo pipefail
+          failed=0
+          for step in "${{ steps.eval_gate.outputs.exit_code }}" "${{ steps.eval_gate_credit.outputs.exit_code }}"; do
+            case "$step" in
+              0) ;;
+              1|2) failed=1 ;;
+              *) echo "::error::非预期退出码 $step"; failed=1 ;;
+            esac
+          done
+          if [ "$failed" -eq 1 ]; then
+            echo "::error::回归门禁未通过，构建失败。详见上方报告。"
+            exit 1
+          fi
+          echo "✅ 全部回归门禁通过"
+
+  lint:
+    name: 格式与静态检查
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+          cache: maven
+      # ★ 单独跑 spotless:check 而不是在 verify 里顺带跑：
+      #   格式问题必须在 30 秒内报出来，而不是让评审者等 8 分钟看到一条无关的红叉
+      - name: spotless 格式校验
+        run: mvn -B spotless:check
+
+      - name: 校验评测集可解析
+        # 评测集进了 git 就可能被人手改坏。这里在 CI 里当场解析一次，
+        # 坏数据不会等到「跑门禁的那天」才暴露
+        #
+        # ★ 本条在 CI run 38054870933 变红过。修的时候发现是**两个独立缺陷**叠在一起，
+        #   只修第一个（加 -am）会立刻撞上第二个。两个都必须在：
+        #
+        #   ① -am
+        #      glasshouse-eval 依赖 glasshouse-core:0.1.0-SNAPSHOT，这个版本只存在于
+        #      本仓库的 reactor 里，本地 ~/.m2 和远端仓库都没有。只用
+        #      -pl glasshouse-eval 会让 Maven 去仓库里找它，必然
+        #      "Could not find artifact"，红在依赖解析上而不是红在「评测集坏没坏」上——
+        #      报错信息和这一步的真实意图完全无关，容易被误读成数据集有问题。
+        #
+        #   ② -Dsurefire.failIfNoSpecifiedTests=false
+        #      带 -am 后 core 也进了 reactor，但 -Dtest=DatasetRegistryTest 在 core 里
+        #      命中 0 个测试，surefire 3.x 会直接报
+        #      "No tests matching pattern ... were executed!"。
+        #      注意：老写法 -DfailIfNoTests=false 对 -Dtest= 不起作用
+        #      （它是给 POM 里 <includes>/<excludes> 用的），必须用 surefire 报错时
+        #      自己提示的这个属性名。
+        run: |
+          set -euo pipefail
+          mvn -B -am -pl glasshouse-eval test \
+              -Dtest=DatasetRegistryTest \
+              -Dsurefire.failIfNoSpecifiedTests=false
+
+          # ★ 补一道闸：上面那条命令在 DatasetRegistryTest 被改名或删掉时**同样会是绿的**
+          #   （两个模块都命中 0 个测试，这一步静默失效，之后再没人发现评测集坏没坏）。
+          #   所以显式确认它真的跑到了测试 —— 门禁不能因为错误的原因变绿。
+          REPORT="glasshouse-eval/target/surefire-reports/io.github.nephets.glasshouse.eval.dataset.DatasetRegistryTest.txt"
+          if [ ! -f "$REPORT" ]; then
+            echo "::error::DatasetRegistryTest 没有产生任何测试报告 —— 测试类被改名或删除了？这一步已经失效"
+            exit 1
+          fi
+          RAN=$(awk '/^Tests run: /{print $3+0; exit}' "$REPORT")
+          if [ "${RAN:-0}" -lt 1 ]; then
+            echo "::error::DatasetRegistryTest 实际跑了 ${RAN:-0} 个测试（预期 > 0），评测集没有被真正解析"
+            exit 1
+          fi
+          echo "✓ DatasetRegistryTest 跑了 ${RAN} 个测试，内置评测集全部可解析"
