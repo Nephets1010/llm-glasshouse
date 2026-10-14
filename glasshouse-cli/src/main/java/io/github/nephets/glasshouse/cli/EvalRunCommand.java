@@ -96,8 +96,7 @@ public final class EvalRunCommand implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         if (options.dataset == null || options.dataset.isBlank()) {
-            log.warn("[glasshouse] eval run 缺少 --dataset");
-            System.err.println("[glasshouse] 错误: 必须用 --dataset 指定评测集。");
+            log.warn("[glasshouse] 必须用 --dataset 指定评测集。");
             return GlasshouseCli.EXIT_USAGE_ERROR;
         }
         log.info("[glasshouse] 评测开始: dataset={}, gate={}", options.dataset, gate);
@@ -108,8 +107,7 @@ public final class EvalRunCommand implements Callable<Integer> {
             // ★ 回放文件读不了是「配置错误」，必须 exit 2。
             //   混进 exit 1 会让 CI 显示「门禁不达标」，使用者会去调阈值，
             //   而真正的问题是文件路径写错了。
-            log.warn("[glasshouse] 模型装配失败: {}", e.toString());
-            System.err.println("[glasshouse] 错误: " + findRoot().describeError(e));
+            log.warn("[glasshouse] 模型装配失败: {}", findRoot().describeError(e));
             return GlasshouseCli.EXIT_USAGE_ERROR;
         }
 
@@ -150,16 +148,13 @@ public final class EvalRunCommand implements Callable<Integer> {
         } catch (
                 io.github.nephets.glasshouse.eval.dataset.JsonlDatasetParser.DatasetParseException
                         e) {
-            log.warn("[glasshouse] 评测集解析失败: {}", e.getMessage());
-            System.err.println("[glasshouse] 评测集错误: " + e.getMessage());
+            log.warn("[glasshouse] 评测集错误: {}", e.getMessage());
             return GlasshouseCli.EXIT_USAGE_ERROR;
         } catch (io.github.nephets.glasshouse.core.eval.GateEvaluator.GateParseException e) {
-            log.warn("[glasshouse] 门禁表达式解析失败: {}", e.getMessage());
-            System.err.println("[glasshouse] 门禁配置错误: " + e.getMessage());
+            log.warn("[glasshouse] 门禁配置错误: {}", e.getMessage());
             return GlasshouseCli.EXIT_USAGE_ERROR;
         } catch (RuntimeException e) {
-            log.error("[glasshouse] 评测执行失败", e);
-            System.err.println("[glasshouse] 错误: " + findRoot().describeError(e));
+            log.error("[glasshouse] 评测执行失败: {}", findRoot().describeError(e), e);
             return GlasshouseCli.EXIT_USAGE_ERROR;
         }
     }

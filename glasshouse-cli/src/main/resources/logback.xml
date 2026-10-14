@@ -18,7 +18,7 @@
   <!--
     CLI 的日志约定（架构 §8.5）：
     · 默认只打 WARN 及以上，避免 CI 日志被 INFO 淹没
-    · 评测命令的正常进展用 System.out 打印，不走 logger
+    · 出错原因这类输出走 logger（stderr）；进度与报表仍用 System.out 打印，不走 logger
     · 需要排查时用 GLASSHOUSE_LOG_LEVEL=DEBUG 打开
   -->
   <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
@@ -28,6 +28,11 @@
     </encoder>
   </appender>
 
+  <!--
+    cli 包刻意不单独配 logger：本次迁过来的都是 WARN/ERROR，父级默认阈值已经能打印；
+    若在此处写死 level，会把 GLASSHOUSE_LOG_LEVEL 的调节能力封顶，
+    DEBUG 也就打不开了。级别一律由下面这条继承决定。
+  -->
   <logger name="io.github.nephets.glasshouse" level="${GLASSHOUSE_LOG_LEVEL:-WARN}"/>
   <logger name="org.springframework" level="WARN"/>
   <logger name="io.netty" level="WARN"/>

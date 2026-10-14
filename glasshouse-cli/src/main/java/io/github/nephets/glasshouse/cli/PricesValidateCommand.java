@@ -24,6 +24,9 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * {@code glasshouse prices validate} —— 校验外部价格表文件。
  *
@@ -35,6 +38,8 @@ import picocli.CommandLine.Spec;
         sortOptions = false,
         description = "校验一个价格表文件（外部挂载的热更新源）。")
 public final class PricesValidateCommand implements Callable<Integer> {
+
+    private static final Logger log = LoggerFactory.getLogger(PricesValidateCommand.class);
 
     /**
      * 当前命令的 spec。picocli 通过反射注入，字段必须包级可见。
@@ -89,7 +94,7 @@ public final class PricesValidateCommand implements Callable<Integer> {
             }
             return GlasshouseCli.EXIT_OK;
         } catch (RuntimeException e) {
-            System.err.println("[glasshouse] ❌ 价格表校验失败: " + e.getMessage());
+            log.warn("[glasshouse] 价格表校验失败: {}", e.getMessage());
             return GlasshouseCli.EXIT_USAGE_ERROR;
         }
     }

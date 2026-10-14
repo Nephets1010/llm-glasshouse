@@ -30,6 +30,9 @@ import io.github.nephets.glasshouse.eval.EvalEngine;
 import io.github.nephets.glasshouse.eval.dataset.DatasetRegistry;
 import io.github.nephets.glasshouse.eval.runner.BaselineComparator;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * {@code glasshouse eval compare} —— 两个 Prompt 版本逐项对比。
  *
@@ -41,6 +44,8 @@ import io.github.nephets.glasshouse.eval.runner.BaselineComparator;
         sortOptions = false,
         description = "对两个 Prompt 版本在同一评测集上跑分，输出逐项 diff 与退化用例清单。")
 public final class EvalCompareCommand implements Callable<Integer> {
+
+    private static final Logger log = LoggerFactory.getLogger(EvalCompareCommand.class);
 
     /**
      * 当前命令的 spec。picocli 通过反射注入，字段必须包级可见。
@@ -87,12 +92,12 @@ public final class EvalCompareCommand implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         if (options.dataset == null || options.dataset.isBlank() || baseline == null) {
-            System.err.println("[glasshouse] 错误: 必须同时指定 --dataset 与 --baseline。");
+            log.warn("[glasshouse] 必须同时指定 --dataset 与 --baseline。");
             return GlasshouseCli.EXIT_USAGE_ERROR;
         }
         Path replay = options.resolveReplayFile();
         if (replay == null) {
-            System.err.println("[glasshouse] 错误: 未找到录制文件。");
+            log.warn("[glasshouse] 未找到录制文件。");
             return GlasshouseCli.EXIT_USAGE_ERROR;
         }
         Path baseReplay =
@@ -102,7 +107,7 @@ public final class EvalCompareCommand implements Callable<Integer> {
                                 "eval-datasets",
                                 options.dataset + "." + baseline + ".responses.jsonl");
         if (!Files.isRegularFile(baseReplay)) {
-            System.err.println("[glasshouse] 错误: 未找到基线录制文件: " + baseReplay.toAbsolutePath());
+            log.warn("[glasshouse] 未找到基线录制文件: {}", baseReplay.toAbsolutePath());
             return GlasshouseCli.EXIT_USAGE_ERROR;
         }
 
@@ -135,7 +140,7 @@ public final class EvalCompareCommand implements Callable<Integer> {
             System.out.println("✅ 未引入退化用例。");
             return GlasshouseCli.EXIT_OK;
         } catch (RuntimeException e) {
-            System.err.println("[glasshouse] 错误: " + findRoot().describeError(e));
+            log.error("[glasshouse] 对比执行失败: {}", findRoot().describeError(e), e);
             return GlasshouseCli.EXIT_USAGE_ERROR;
         }
     }

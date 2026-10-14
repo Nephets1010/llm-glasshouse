@@ -101,15 +101,13 @@ public final class CostCommand implements Callable<Integer> {
     public Integer call() throws Exception {
         AttributionDimension dimension = AttributionDimension.from(by);
         if (dimension == null) {
-            log.warn("[glasshouse] cost 命令收到未知维度: {}", by);
-            System.err.println(
-                    "[glasshouse] 错误: 未知维度 \""
-                            + by
-                            + "\"。可用维度："
-                            + AttributionDimension.all().stream()
-                                    .map(AttributionDimension::columnName)
-                                    .reduce((a, b) -> a + " / " + b)
-                                    .orElse(""));
+            log.warn(
+                    "[glasshouse] 未知维度 \"{}\"。可用维度：{}",
+                    by,
+                    AttributionDimension.all().stream()
+                            .map(AttributionDimension::columnName)
+                            .reduce((a, b) -> a + " / " + b)
+                            .orElse(""));
             return GlasshouseCli.EXIT_USAGE_ERROR;
         }
         if (input == null) {
@@ -121,16 +119,14 @@ public final class CostCommand implements Callable<Integer> {
             return GlasshouseCli.EXIT_USAGE_ERROR;
         }
         if (!Files.isRegularFile(input)) {
-            log.warn("[glasshouse] cost 输入文件不存在: {}", input.toAbsolutePath());
-            System.err.println("[glasshouse] 错误: 文件不存在: " + input.toAbsolutePath());
+            log.warn("[glasshouse] 文件不存在: {}", input.toAbsolutePath());
             return GlasshouseCli.EXIT_USAGE_ERROR;
         }
 
         try (CliRuntime runtime = root.newRuntime()) {
             int loaded = load(runtime);
             if (loaded == 0) {
-                log.warn("[glasshouse] cost 输入文件中没有可解析的 span: {}", input.toAbsolutePath());
-                System.err.println("[glasshouse] 错误: 文件中没有可解析的 span: " + input.toAbsolutePath());
+                log.warn("[glasshouse] 文件中没有可解析的 span: {}", input.toAbsolutePath());
                 return GlasshouseCli.EXIT_USAGE_ERROR;
             }
             AttributionReport report =
@@ -144,9 +140,7 @@ public final class CostCommand implements Callable<Integer> {
                 case "csv" -> System.out.print(renderCsv(report));
                 case "table" -> System.out.print(renderTable(report));
                 default -> {
-                    log.warn("[glasshouse] cost 命令收到未知输出格式: {}", format);
-                    System.err.println(
-                            "[glasshouse] 错误: 未知格式 \"" + format + "\"，可用：table / json / csv");
+                    log.warn("[glasshouse] 未知格式 \"{}\"，可用：table / json / csv", format);
                     return GlasshouseCli.EXIT_USAGE_ERROR;
                 }
             }
