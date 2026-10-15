@@ -14,19 +14,27 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<!--
-  测试专用日志配置。
-
-  为什么不能直接复用 main 的那份：那份的级别写成变量占位符、会从环境变量读，
-  于是本机导出了 GLASSHOUSE_LOG_LEVEL=ERROR 的人跑测试会挂。CLI 迁移后，
-  GlasshouseCliTest 有 4 条 stderr 断言（cost 未知维度、eval run 缺 dataset 参数、
-  回放文件不存在、回放文件不可读）已经从 System.err.println 改由 log.warn 输出，
-  断言能不能过取决于日志级别是否被打开。测试必须自洽，所以这里把级别写死为 WARN，
-  与环境解耦。生产行为（含 GLASSHOUSE_LOG_LEVEL 开关）仍由 main 那份配置负责。
-
-  注意：XML 注释里不允许出现连续两个半角连字符，写的时候别把命令行选项原样抄进来。
--->
 <configuration>
+  <!--
+    测试期日志配置。与 src/main/resources/logback.xml 的唯一实质区别是：
+    级别写死为 WARN，不再读 GLASSHOUSE_LOG_LEVEL 环境变量。
+
+    原因：GlasshouseCliTest 里有 8 条断言是针对 stderr 的内容断言：要求 stderr
+    中出现「未找到」「未知维度」这类关键词，以及各命令提示出来的必填参数名。
+    Day 5 之后这些内容不再由 System.err.println 直接写出，而是由 log.warn /
+    log.error 经本 appender 落到 stderr。一旦有人在机器上导出
+    GLASSHOUSE_LOG_LEVEL=ERROR（或 OFF），主配置就会把阈值抬到 WARN 之上，
+    warn 级日志被吞掉，stderr 变成空串，这 8 条断言全部取不到内容。
+    测试结果不该随开发机的环境变量漂移，所以这里把级别钉死在 WARN：
+    既保证 warn / error 都出得来，也不至于让阈值被人从外部抬高。
+
+    ★ 注意本文件是 XML：注释正文里不能出现连续两个连字符，否则整个文件解析失败，
+      logback 会退化成「没有 appender」，症状恰好就是上面说的 stderr 全空。
+      所以下面只写参数名的含义，不照抄命令行里的参数写法。
+
+    appender 的 target 必须是 System.err：测试用 System.setErr 换流后再断言，
+    命令的错误与告警、以及本文件的日志输出，两边要落到同一个流上。
+  -->
   <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
     <target>System.err</target>
     <encoder>

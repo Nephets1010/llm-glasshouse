@@ -208,7 +208,7 @@ final class EvalCommonOptions {
         }
         Path replay = resolveReplayFile();
         if (replay != null && !java.nio.file.Files.isReadable(replay)) {
-            log.warn("[glasshouse] 回放文件不存在或不可读: {}", replay.toAbsolutePath());
+            log.warn("[glasshouse] 错误: 回放文件不存在或不可读: {}", replay.toAbsolutePath());
             throw new IllegalStateException("回放文件不可读: " + replay);
         }
         if (replay == null) {
@@ -221,13 +221,18 @@ final class EvalCommonOptions {
             }
         }
         if (replay == null) {
+            // 与 trace 命令同规则：整段导航提示合并成一次调用，逐行文本保持不变。
             log.warn(
-                    "[glasshouse] 未找到录制文件 eval-datasets/{}.responses.jsonl。请二选一："
-                            + "1) 用 --replay 指定录制文件；"
-                            + "2) 用 --base-url 指定 OpenAI 兼容端点（会调真实模型并产生费用）；"
-                            + "3) 录制一份：glasshouse eval run --dataset {} --base-url <url>",
-                    dataset,
-                    dataset);
+                    "{}",
+                    "[glasshouse] 错误: 未找到录制文件 eval-datasets/"
+                            + dataset
+                            + ".responses.jsonl。\n"
+                            + "          请二选一：\n"
+                            + "            1) 用 --replay 指定录制文件\n"
+                            + "            2) 用 --base-url 指定 OpenAI 兼容端点（会调真实模型并产生费用）\n"
+                            + "            3) 录制一份：glasshouse eval run --dataset "
+                            + dataset
+                            + " --base-url <url>");
             throw new IllegalStateException("没有可用的模型来源");
         }
         ReplayChatModel model = ReplayChatModel.fromFile(replay);

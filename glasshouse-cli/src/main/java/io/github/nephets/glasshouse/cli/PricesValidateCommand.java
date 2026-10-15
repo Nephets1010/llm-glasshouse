@@ -78,7 +78,7 @@ public final class PricesValidateCommand implements Callable<Integer> {
     @Override
     public Integer call() {
         if (file == null) {
-            System.err.println("[glasshouse] 错误: 必须用 --file 指定价格表文件。");
+            log.warn("[glasshouse] 错误: 必须用 --file 指定价格表文件。");
             return GlasshouseCli.EXIT_USAGE_ERROR;
         }
         var loader = new io.github.nephets.glasshouse.core.pricing.PricingTableLoader();
@@ -94,7 +94,7 @@ public final class PricesValidateCommand implements Callable<Integer> {
             }
             return GlasshouseCli.EXIT_OK;
         } catch (RuntimeException e) {
-            log.warn("[glasshouse] 价格表校验失败: {}", e.getMessage());
+            log.error("[glasshouse] ❌ 价格表校验失败: {}", e.getMessage(), e);
             return GlasshouseCli.EXIT_USAGE_ERROR;
         }
     }
