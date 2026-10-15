@@ -99,35 +99,36 @@ public final class TraceCommand implements Callable<Integer> {
         try (CliRuntime runtime = root.newRuntime()) {
             SpanTreeQuery query = resolveQuery(runtime);
             if (query == null) {
-                log.warn("[glasshouse] trace 命令没有可查询的 span 数据: input={}", input);
-                System.err.println(
-                        "[glasshouse] 错误: 没有可查询的 span 数据。"
-                                + (input == null
-                                        ? "请用 --input 指定 span 文件，或在运行中的应用进程内查询 /_glasshouse/trace/{traceId}。"
-                                        : "请检查文件是否可读: " + input));
+                log.warn(
+                        "[glasshouse] 错误: 没有可查询的 span 数据。{}",
+                        input == null
+                                ? "请用 --input 指定 span 文件，或在运行中的应用进程内查询 /_glasshouse/trace/{traceId}。"
+                                : "请检查文件是否可读: " + input);
                 return GlasshouseCli.EXIT_USAGE_ERROR;
             }
             List<SpanRingBuffer.SpanData> spans = query.spansOf(effectiveTraceId);
             if (spans.isEmpty()) {
-                log.warn("[glasshouse] 未找到 traceId={} 的 span", effectiveTraceId);
-                System.err.println("[glasshouse] 错误: 未找到 traceId=" + effectiveTraceId + " 的 span。");
+                log.warn("[glasshouse] 错误: 未找到 traceId={} 的 span。", effectiveTraceId);
                 if (input == null) {
                     // ★ 没给 --input 时必须直说「去哪儿拿 span」——
                     //   只说「没找到」会让使用者以为埋点没生效，实际只是查错了地方。
-                    System.err.println();
-                    System.err.println("当前 CLI 进程内没有 span 数据。三种取数方式：");
-                    System.err.println("  1) 从 JSONL 文件查询：--input spans.jsonl");
-                    System.err.println("  2) 在运行中的应用里查：GET /_glasshouse/trace/" + effectiveTraceId);
-                    System.err.println(
-                            "  3) 直接 curl：curl localhost:8080/_glasshouse/trace/"
+                    //   整段导航提示合并成一次调用，输出的每一行仍与原来逐行一致。
+                    log.warn(
+                            "{}",
+                            "\n当前 CLI 进程内没有 span 数据。三种取数方式："
+                                    + "\n  1) 从 JSONL 文件查询：--input spans.jsonl"
+                                    + "\n  2) 在运行中的应用里查：GET /_glasshouse/trace/"
+                                    + effectiveTraceId
+                                    + "\n  3) 直接 curl：curl localhost:8080/_glasshouse/trace/"
                                     + effectiveTraceId
                                     + "?cost=true");
                     return GlasshouseCli.EXIT_USAGE_ERROR;
                 }
-                System.err.println("可用的 traceId：");
+                StringBuilder known = new StringBuilder("可用的 traceId：");
                 for (String id : availableTraceIds().stream().limit(10).toList()) {
-                    System.err.println("  - " + id);
+                    known.append('\n').append("  - ").append(id);
                 }
+                log.warn("{}", known);
                 return GlasshouseCli.EXIT_USAGE_ERROR;
             }
             log.debug(
@@ -234,8 +235,7 @@ public final class TraceCommand implements Callable<Integer> {
         try {
             loadInto(buffer);
         } catch (java.io.IOException e) {
-            log.warn("[glasshouse] 读取 span 文件失败: {}", e.getMessage());
-            System.err.println("[glasshouse] WARN " + e.getMessage());
+            log.warn("[glasshouse] WARN {}", e.getMessage(), e);
         }
     }
 

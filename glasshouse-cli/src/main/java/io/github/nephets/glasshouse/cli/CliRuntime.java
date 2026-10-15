@@ -77,20 +77,14 @@ final class CliRuntime implements AutoCloseable {
                         new io.github.nephets.glasshouse.core.attribution.InMemoryMetricStore(),
                         pricingTable,
                         CostCalculator.getInstance(),
-                        msg -> {
-                            // 错误原因同时进日志和 stderr，为了在 CI 日志里能直接看到
-                            log.warn("[glasshouse] {}", msg);
-                            System.err.println("[glasshouse] WARN " + msg);
-                        });
+                        msg -> log.warn("[glasshouse] WARN {}", msg));
 
         try {
             this.pricingTable.replaceAll(pricingLoader.loadFromClasspath().entries());
         } catch (RuntimeException e) {
             // ★ 价格表加载失败会让「所有成本都算成 0」——这是最容易被误读成
-            //   「这个模型真便宜」的静默失败，必须进日志；异常对象一并带上，
-            //   否则只看到一句 message 无法定位是哪个文件、哪一行为什么坏了。
-            //   日志的 appender 本身就打 stderr，CI 里能直接看到，不必再写一份 System.err。
-            log.warn("[glasshouse] 价格表加载失败，成本将记 0: {}", e.getMessage(), e);
+            //   「这个模型真便宜」的静默失败，必须按失败级别记日志并带上异常。
+            log.error("[glasshouse] WARN 价格表加载失败，成本将记 0: {}", e.getMessage(), e);
         }
 
         Resource resource =

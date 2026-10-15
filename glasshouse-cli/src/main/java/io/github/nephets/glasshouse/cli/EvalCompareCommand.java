@@ -92,12 +92,12 @@ public final class EvalCompareCommand implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         if (options.dataset == null || options.dataset.isBlank() || baseline == null) {
-            log.warn("[glasshouse] 必须同时指定 --dataset 与 --baseline。");
+            log.warn("[glasshouse] 错误: 必须同时指定 --dataset 与 --baseline。");
             return GlasshouseCli.EXIT_USAGE_ERROR;
         }
         Path replay = options.resolveReplayFile();
         if (replay == null) {
-            log.warn("[glasshouse] 未找到录制文件。");
+            log.warn("[glasshouse] 错误: 未找到录制文件。");
             return GlasshouseCli.EXIT_USAGE_ERROR;
         }
         Path baseReplay =
@@ -107,7 +107,7 @@ public final class EvalCompareCommand implements Callable<Integer> {
                                 "eval-datasets",
                                 options.dataset + "." + baseline + ".responses.jsonl");
         if (!Files.isRegularFile(baseReplay)) {
-            log.warn("[glasshouse] 未找到基线录制文件: {}", baseReplay.toAbsolutePath());
+            log.warn("[glasshouse] 错误: 未找到基线录制文件: {}", baseReplay.toAbsolutePath());
             return GlasshouseCli.EXIT_USAGE_ERROR;
         }
 
@@ -140,7 +140,7 @@ public final class EvalCompareCommand implements Callable<Integer> {
             System.out.println("✅ 未引入退化用例。");
             return GlasshouseCli.EXIT_OK;
         } catch (RuntimeException e) {
-            log.error("[glasshouse] 对比执行失败: {}", findRoot().describeError(e), e);
+            log.error("[glasshouse] 错误: {}", findRoot().describeError(e), e);
             return GlasshouseCli.EXIT_USAGE_ERROR;
         }
     }

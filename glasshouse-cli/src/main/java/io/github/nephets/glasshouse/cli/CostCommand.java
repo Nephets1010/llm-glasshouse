@@ -102,7 +102,7 @@ public final class CostCommand implements Callable<Integer> {
         AttributionDimension dimension = AttributionDimension.from(by);
         if (dimension == null) {
             log.warn(
-                    "[glasshouse] 未知维度 \"{}\"。可用维度：{}",
+                    "[glasshouse] 错误: 未知维度 \"{}\"。可用维度：{}",
                     by,
                     AttributionDimension.all().stream()
                             .map(AttributionDimension::columnName)
@@ -111,22 +111,21 @@ public final class CostCommand implements Callable<Integer> {
             return GlasshouseCli.EXIT_USAGE_ERROR;
         }
         if (input == null) {
-            log.warn("[glasshouse] cost 命令缺少 --input");
-            System.err.println(
+            log.warn(
                     "[glasshouse] 错误: 请用 --input 指定 span 文件（JSONL，每行一个 span）。"
-                            + "或直接访问运行中应用的 /_glasshouse/cost?dimension="
-                            + dimension.columnName());
+                            + "或直接访问运行中应用的 /_glasshouse/cost?dimension={}",
+                    dimension.columnName());
             return GlasshouseCli.EXIT_USAGE_ERROR;
         }
         if (!Files.isRegularFile(input)) {
-            log.warn("[glasshouse] 文件不存在: {}", input.toAbsolutePath());
+            log.warn("[glasshouse] 错误: 文件不存在: {}", input.toAbsolutePath());
             return GlasshouseCli.EXIT_USAGE_ERROR;
         }
 
         try (CliRuntime runtime = root.newRuntime()) {
             int loaded = load(runtime);
             if (loaded == 0) {
-                log.warn("[glasshouse] 文件中没有可解析的 span: {}", input.toAbsolutePath());
+                log.warn("[glasshouse] 错误: 文件中没有可解析的 span: {}", input.toAbsolutePath());
                 return GlasshouseCli.EXIT_USAGE_ERROR;
             }
             AttributionReport report =
@@ -140,7 +139,7 @@ public final class CostCommand implements Callable<Integer> {
                 case "csv" -> System.out.print(renderCsv(report));
                 case "table" -> System.out.print(renderTable(report));
                 default -> {
-                    log.warn("[glasshouse] 未知格式 \"{}\"，可用：table / json / csv", format);
+                    log.warn("[glasshouse] 错误: 未知格式 \"{}\"，可用：table / json / csv", format);
                     return GlasshouseCli.EXIT_USAGE_ERROR;
                 }
             }

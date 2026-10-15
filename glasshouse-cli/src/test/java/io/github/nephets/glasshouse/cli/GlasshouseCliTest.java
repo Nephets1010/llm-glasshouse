@@ -283,6 +283,23 @@ class GlasshouseCliTest {
     }
 
     @Test
+    @DisplayName("trace 缺 --input 时三种取数方式逐行完整（锁住多行提示合并成一次日志调用）")
+    void traceWithoutInputListsThreeWaysLineByLine() {
+        int code = run("trace", "--trace-id", TRACE_ID);
+
+        assertThat(code).isEqualTo(2);
+        assertThat(stderr())
+                .as("★ 导航提示合并成一次日志调用后，每一行仍要逐行原样出现")
+                .contains("当前 CLI 进程内没有 span 数据。三种取数方式：")
+                .contains("  1) 从 JSONL 文件查询：--input spans.jsonl")
+                .contains("  2) 在运行中的应用里查：GET /_glasshouse/trace/" + TRACE_ID)
+                .contains(
+                        "  3) 直接 curl：curl localhost:8080/_glasshouse/trace/"
+                                + TRACE_ID
+                                + "?cost=true");
+    }
+
+    @Test
     @DisplayName("trace --last 取最近一条链路")
     void traceLastPicksLatest() throws IOException {
         Path file = writeAgentSpanFile();
