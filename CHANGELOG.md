@@ -65,6 +65,16 @@
 - 零 API Key：模型由进程内 mock 服务提供
 - 三步客服 Agent（planner → chat + retrieval + tool + chat），span 树即 README 首屏截图
 
+### Changed（工程优化 Day 4-6）
+
+- CLI 输出分成两条路，互不混用：命令结果（报表、表格、JSON/CSV、帮助与提示）走 `CliConsole`
+  落 stdout；错误与告警走 SLF4J，由 logback 落 stderr
+- 新增 `CliConsole` 出口类，主源码里散落的 61 处 `System.out` 直写全部收敛到它，
+  `printStackTrace` 保持 0
+- `CliConsole` 每次调用都重新读 `System.out` 字段，不做静态快照；这一点由 `CliConsoleTest`
+  的变异测试锁住（改成静态快照会让 5 条用例全红）
+- `logback.xml` 注释同步更新为「进度与报表走 CliConsole」，原说法已被本次改动作废
+
 ### Fixed（开发过程中由测试抓出的真实缺陷）
 
 这些是本仓测试抓出的**真实 bug**，不是补测试时顺手写的：
@@ -91,4 +101,8 @@
   商业支持（Tanzu Spring，付费）持续至 2032-06-30。迁移 Boot 4.x 排期中 ——
   `glasshouse-core` 68 个文件 0 个 Spring 引用，改动锁定在 starter 的 7 个文件
 - CLI `--base-url` 真实端点路径未在 CI 覆盖（需真实 API Key）
+- `eval run` 的指标行、`prices show` / `prices support` 的表格行、以及 `trace --json`
+  里的 attributes 顺序会随 JVM 启动时的 ImmutableCollections SALT 抖动
+  （`Map.of` / `Map.copyOf` 背后），同一份代码跨进程跑两次也可能不一致；
+  比对产物前需先做行序规范化，且 `eval run --verbose` 的「耗时 N ms」是墙钟值，必须掩码
 - LLM-as-judge 首版不参与默认评测（未接入时恒为 0，避免「因为没算分而通过」）

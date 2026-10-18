@@ -25,6 +25,8 @@ import io.github.nephets.glasshouse.core.eval.EvalCase;
 import io.github.nephets.glasshouse.core.eval.JsonlDataset;
 import io.github.nephets.glasshouse.eval.dataset.DatasetRegistry;
 
+import static io.github.nephets.glasshouse.cli.CliConsole.*;
+
 /**
  * {@code glasshouse eval list} —— 列出可用评测集。
  *
@@ -42,19 +44,19 @@ public final class EvalListCommand implements Callable<Integer> {
         DatasetRegistry registry = new DatasetRegistry();
         List<String> names = registry.list();
         if (names.isEmpty()) {
-            System.out.println("未找到评测集。请检查 eval-datasets/ 目录或 classpath。");
+            println("未找到评测集。请检查 eval-datasets/ 目录或 classpath。");
             return GlasshouseCli.EXIT_OK;
         }
-        System.out.println("可用评测集（" + names.size() + " 个）：");
+        println("可用评测集（" + names.size() + " 个）：");
         for (String name : names) {
             try {
                 JsonlDataset dataset = registry.load(name);
                 long authored = dataset.cases().stream().filter(EvalCase::authored).count();
-                System.out.printf(
+                printf(
                         "  - %-28s %3d 条用例（自撰 %d）  版本=%s%n",
                         name, dataset.size(), authored, dataset.version());
             } catch (RuntimeException e) {
-                System.out.printf("  - %-28s 解析失败: %s%n", name, e.getMessage());
+                printf("  - %-28s 解析失败: %s%n", name, e.getMessage());
             }
         }
         return GlasshouseCli.EXIT_OK;

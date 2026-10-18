@@ -18,7 +18,7 @@
   <!--
     CLI 的日志约定（架构 §8.5）：
     · 默认只打 WARN 及以上，避免 CI 日志被 INFO 淹没
-    · 出错原因这类输出走 logger（stderr）；进度与报表仍用 System.out 打印，不走 logger
+    · 出错原因这类输出走 logger（stderr）；进度与报表走 CliConsole 打印到 stdout，不走 logger
     · 需要排查时用 GLASSHOUSE_LOG_LEVEL=DEBUG 打开
   -->
   <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">

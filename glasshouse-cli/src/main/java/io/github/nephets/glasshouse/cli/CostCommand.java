@@ -41,6 +41,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import static io.github.nephets.glasshouse.cli.CliConsole.*;
+
 /**
  * {@code glasshouse cost} —— 按维度下钻成本，回答「钱花在哪」。
  *
@@ -135,9 +137,9 @@ public final class CostCommand implements Callable<Integer> {
                                             .of(dimension)
                                             .withLimit(limit));
             switch (format.toLowerCase(java.util.Locale.ROOT)) {
-                case "json" -> System.out.println(renderJson(report));
-                case "csv" -> System.out.print(renderCsv(report));
-                case "table" -> System.out.print(renderTable(report));
+                case "json" -> println(renderJson(report));
+                case "csv" -> print(renderCsv(report));
+                case "table" -> print(renderTable(report));
                 default -> {
                     log.warn("[glasshouse] 错误: 未知格式 \"{}\"，可用：table / json / csv", format);
                     return GlasshouseCli.EXIT_USAGE_ERROR;

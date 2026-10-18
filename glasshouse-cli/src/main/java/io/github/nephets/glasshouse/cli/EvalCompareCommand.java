@@ -33,6 +33,8 @@ import io.github.nephets.glasshouse.eval.runner.BaselineComparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.github.nephets.glasshouse.cli.CliConsole.*;
+
 /**
  * {@code glasshouse eval compare} —— 两个 Prompt 版本逐项对比。
  *
@@ -128,16 +130,16 @@ public final class EvalCompareCommand implements Callable<Integer> {
 
             BaselineComparator.Comparison comparison =
                     new BaselineComparator().compare(baseResult.report(), currentResult.report());
-            System.out.println(comparison.describe());
+            println(comparison.describe());
 
             long regressed = comparison.regressedCount();
             if (regressed > 0) {
-                System.out.println();
-                System.out.println("❌ 存在退化用例：" + comparison.regressedCaseIds());
+                println();
+                println("❌ 存在退化用例：" + comparison.regressedCaseIds());
                 return GlasshouseCli.EXIT_GATE_FAILED;
             }
-            System.out.println();
-            System.out.println("✅ 未引入退化用例。");
+            println();
+            println("✅ 未引入退化用例。");
             return GlasshouseCli.EXIT_OK;
         } catch (RuntimeException e) {
             log.error("[glasshouse] 错误: {}", findRoot().describeError(e), e);

@@ -29,6 +29,8 @@ import io.github.nephets.glasshouse.core.pricing.PriceEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.github.nephets.glasshouse.cli.CliConsole.*;
+
 /**
  * {@code glasshouse prices reload} —— 重新加载并对比变化。
  *
@@ -90,14 +92,14 @@ public final class PricesReloadCommand implements Callable<Integer> {
             var result = runtime.pricingLoader().loadFromFile(file);
             runtime.pricingTable().replaceAll(result.entries());
 
-            System.out.println("重载完成: " + result.summary());
+            println("重载完成: " + result.summary());
             int changed = 0;
             int added = 0;
             for (PriceEntry entry : runtime.pricingTable().all()) {
                 PriceEntry old = before.get(entry.lookupKey());
                 if (old == null) {
                     added++;
-                    System.out.println(
+                    println(
                             "  + 新增 "
                                     + entry.lookupKey()
                                     + " in="
@@ -107,7 +109,7 @@ public final class PricesReloadCommand implements Callable<Integer> {
                 } else if (!old.inputPricePerUnit().equals(entry.inputPricePerUnit())
                         || !old.outputPricePerUnit().equals(entry.outputPricePerUnit())) {
                     changed++;
-                    System.out.println(
+                    println(
                             "  ~ 变更 "
                                     + entry.lookupKey()
                                     + " 输入 "
@@ -123,7 +125,7 @@ public final class PricesReloadCommand implements Callable<Integer> {
                                     + "）");
                 }
             }
-            System.out.println("新增 " + added + " 条，价格变更 " + changed + " 条。");
+            println("新增 " + added + " 条，价格变更 " + changed + " 条。");
             if (result.hasSkipped()) {
                 // ★ 价格表加载跳过条目会让「某模型成本恒为 0」，是最典型的静默失败场景，必须进日志
                 log.warn(
@@ -131,8 +133,8 @@ public final class PricesReloadCommand implements Callable<Integer> {
                         file,
                         result.skipped().size(),
                         result.skipped());
-                System.out.println("⚠ 跳过条目 " + result.skipped().size() + " 条：");
-                result.skipped().forEach(s -> System.out.println("   - " + s));
+                println("⚠ 跳过条目 " + result.skipped().size() + " 条：");
+                result.skipped().forEach(s -> println("   - " + s));
             }
             log.info(
                     "[glasshouse] 价格表重载完成: file={}, 新增={}, 变更={}, 跳过={}",
@@ -140,7 +142,7 @@ public final class PricesReloadCommand implements Callable<Integer> {
                     added,
                     changed,
                     result.skipped().size());
-            System.out.println("提示：生产环境请把该文件挂载到固定路径，由 PricingTableLoader 定时热更新，无需重启。");
+            println("提示：生产环境请把该文件挂载到固定路径，由 PricingTableLoader 定时热更新，无需重启。");
             return result.hasSkipped() ? GlasshouseCli.EXIT_GATE_FAILED : GlasshouseCli.EXIT_OK;
         }
     }
