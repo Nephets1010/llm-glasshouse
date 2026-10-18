@@ -21,6 +21,8 @@ import java.util.concurrent.Callable;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
+import static io.github.nephets.glasshouse.cli.CliConsole.*;
+
 /**
  * {@code glasshouse eval} —— 离线评测与 CI 回归门禁（PRD 仓库③ P0-6 ★）。
  *
@@ -39,7 +41,7 @@ public final class EvalCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        CommandLine.usage(this, System.out);
+        CommandLine.usage(this, out());
         return GlasshouseCli.EXIT_OK;
     }
 }

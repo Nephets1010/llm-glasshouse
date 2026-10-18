@@ -26,6 +26,8 @@ import io.github.nephets.glasshouse.cli.version.BuildVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.github.nephets.glasshouse.cli.CliConsole.*;
+
 /**
  * LLM 玻璃房命令行入口。
  *
@@ -95,7 +97,7 @@ public final class GlasshouseCli implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        CommandLine.usage(this, System.out);
+        CommandLine.usage(this, out());
         return EXIT_OK;
     }
 

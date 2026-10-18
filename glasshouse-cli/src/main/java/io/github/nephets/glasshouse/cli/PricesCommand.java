@@ -21,6 +21,8 @@ import java.util.concurrent.Callable;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
+import static io.github.nephets.glasshouse.cli.CliConsole.*;
+
 /**
  * {@code glasshouse prices} —— 价格表查看、校验与热更新验证。
  *
@@ -44,7 +46,7 @@ public final class PricesCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        CommandLine.usage(this, System.out);
+        CommandLine.usage(this, out());
         return GlasshouseCli.EXIT_OK;
     }
 }

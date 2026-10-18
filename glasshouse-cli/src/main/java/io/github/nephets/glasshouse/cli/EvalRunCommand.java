@@ -32,6 +32,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ChatModel;
 
+import static io.github.nephets.glasshouse.cli.CliConsole.*;
+
 /**
  * {@code glasshouse eval run} —— 跑一次评测并判门禁。
  *
@@ -120,22 +122,20 @@ public final class EvalRunCommand implements Callable<Integer> {
                     engine.run(options.dataset, options.toConfig(gate), model, options.renderer());
             List<java.nio.file.Path> written = engine.writeReports(result, options.outDir);
 
-            System.out.println("=== llm-glasshouse 评测报告 ===");
-            System.out.println(result.report().summaryLine());
-            System.out.println();
-            System.out.println(result.verdict().message());
-            System.out.println();
-            System.out.println("指标：");
-            result.report()
-                    .metricScores()
-                    .forEach((k, v) -> System.out.println("  " + k + " = " + v));
+            println("=== llm-glasshouse 评测报告 ===");
+            println(result.report().summaryLine());
+            println();
+            println(result.verdict().message());
+            println();
+            println("指标：");
+            result.report().metricScores().forEach((k, v) -> println("  " + k + " = " + v));
             if (!written.isEmpty()) {
-                System.out.println();
-                written.forEach(p -> System.out.println("报告已写入: " + p.toAbsolutePath()));
+                println();
+                written.forEach(p -> println("报告已写入: " + p.toAbsolutePath()));
             }
             if (verbose) {
-                System.out.println();
-                System.out.println(EvalReportWriter.toMarkdown(result.report(), result.verdict()));
+                println();
+                println(EvalReportWriter.toMarkdown(result.report(), result.verdict()));
             }
             // ★ 门禁结论是 CI 唯一关心的状态迁移点，必须进日志：
             //   流水线日志里「这次为什么红」要比报告文件更容易被检索到。

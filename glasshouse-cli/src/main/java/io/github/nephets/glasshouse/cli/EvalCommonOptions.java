@@ -28,6 +28,8 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
 
+import static io.github.nephets.glasshouse.cli.CliConsole.*;
+
 /**
  * {@code eval run} 与 {@code eval compare} 共用的参数与 Prompt 渲染。
  *
@@ -203,7 +205,7 @@ final class EvalCommonOptions {
     org.springframework.ai.chat.model.ChatModel buildModel(GlasshouseCli root)
             throws java.io.IOException {
         if (baseUrl != null && !baseUrl.isBlank()) {
-            System.out.println("[glasshouse] 使用真实端点: " + baseUrl);
+            println("[glasshouse] 使用真实端点: " + baseUrl);
             return RealEndpointChatModelFactory.create(baseUrl, model);
         }
         Path replay = resolveReplayFile();
@@ -236,7 +238,7 @@ final class EvalCommonOptions {
             throw new IllegalStateException("没有可用的模型来源");
         }
         ReplayChatModel model = ReplayChatModel.fromFile(replay);
-        System.out.println(
+        println(
                 "[glasshouse] 录制回放模式: "
                         + replay.toAbsolutePath()
                         + "（"

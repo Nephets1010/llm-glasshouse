@@ -36,6 +36,8 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import static io.github.nephets.glasshouse.cli.CliConsole.*;
+
 /**
  * {@code glasshouse trace} —— 把一条链路渲染成树，同时回答「慢在哪」与「花了多少」。
  *
@@ -136,9 +138,9 @@ public final class TraceCommand implements Callable<Integer> {
                     spans.size(),
                     effectiveTraceId);
             if (json) {
-                System.out.println(renderJson(effectiveTraceId, query, spans));
+                println(renderJson(effectiveTraceId, query, spans));
             } else {
-                System.out.println(query.render(effectiveTraceId, cost));
+                println(query.render(effectiveTraceId, cost));
             }
             return GlasshouseCli.EXIT_OK;
         }

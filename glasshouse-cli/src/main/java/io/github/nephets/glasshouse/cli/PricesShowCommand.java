@@ -26,6 +26,8 @@ import picocli.CommandLine.Spec;
 import io.github.nephets.glasshouse.core.pricing.PriceEntry;
 import io.github.nephets.glasshouse.core.pricing.PriceSource;
 
+import static io.github.nephets.glasshouse.cli.CliConsole.*;
+
 /**
  * {@code glasshouse prices show} —— 列出价格表内容。
  *
@@ -79,14 +81,14 @@ public final class PricesShowCommand implements Callable<Integer> {
     @Override
     public Integer call() {
         try (CliRuntime runtime = findRoot().newRuntime()) {
-            System.out.println("价格表来源: classpath:prices/glasshouse-prices.yml");
-            System.out.println("条目总数  : " + runtime.pricingTable().size());
-            System.out.println("覆盖范围  : " + runtime.pricingTable().describe());
-            System.out.println();
-            System.out.printf(
+            println("价格表来源: classpath:prices/glasshouse-prices.yml");
+            println("条目总数  : " + runtime.pricingTable().size());
+            println("覆盖范围  : " + runtime.pricingTable().describe());
+            println();
+            printf(
                     "%-12s %-28s %12s %12s %12s %-10s %s%n",
                     "供应商", "模型", "输入/1K", "输出/1K", "缓存/1K", "来源", "生效日");
-            System.out.println("-".repeat(110));
+            println("-".repeat(110));
             for (PriceEntry entry : runtime.pricingTable().all()) {
                 if (provider != null && !provider.equalsIgnoreCase(entry.providerId())) {
                     continue;
@@ -94,7 +96,7 @@ public final class PricesShowCommand implements Callable<Integer> {
                 if (estimatedOnly && entry.source() != PriceSource.ESTIMATED) {
                     continue;
                 }
-                System.out.printf(
+                printf(
                         "%-12s %-28s %12s %12s %12s %-10s %s%n",
                         entry.providerId(),
                         entry.modelId(),

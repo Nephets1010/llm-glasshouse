@@ -26,6 +26,8 @@ import picocli.CommandLine.Spec;
 import io.github.nephets.glasshouse.cli.version.BuildVersion;
 import io.github.nephets.glasshouse.core.usage.CnUsageNormalizer;
 
+import static io.github.nephets.glasshouse.cli.CliConsole.*;
+
 /**
  * {@code glasshouse prices support} —— 打印国产模型支持矩阵。
  *
@@ -70,17 +72,16 @@ public final class PricesSupportCommand implements Callable<Integer> {
     @Override
     public Integer call() {
         try (CliRuntime runtime = findRoot().newRuntime()) {
-            System.out.println("国产模型计量口径支持矩阵（llm-glasshouse " + BuildVersion.version() + "）");
-            System.out.println();
-            System.out.printf(
-                    "%-12s %-16s %-10s %-10s %s%n", "providerId", "供应商", "计量口径", "价格条目", "备注");
-            System.out.println("-".repeat(88));
+            println("国产模型计量口径支持矩阵（llm-glasshouse " + BuildVersion.version() + "）");
+            println();
+            printf("%-12s %-16s %-10s %-10s %s%n", "providerId", "供应商", "计量口径", "价格条目", "备注");
+            println("-".repeat(88));
             for (Map.Entry<String, String> entry : CnUsageNormalizer.supportMatrix().entrySet()) {
                 long priceCount =
                         runtime.pricingTable().all().stream()
                                 .filter(p -> p.providerId().equals(entry.getKey()))
                                 .count();
-                System.out.printf(
+                printf(
                         "%-12s %-16s %-10s %-10s %s%n",
                         entry.getKey(),
                         entry.getValue(),
@@ -88,15 +89,13 @@ public final class PricesSupportCommand implements Callable<Integer> {
                         priceCount,
                         priceCount > 0 ? "已维护价格" : "未配置价格（成本将记 0）");
             }
-            System.out.println();
-            System.out.println("计量口径说明：");
-            System.out.println(
-                    "  · 通义/智谱/DeepSeek/Kimi/豆包 走 CnUsageNormalizer，各自的 reasoning 字段位置不同");
-            System.out.println(
-                    "  · 供应商不返回推理 token 时，reasoningTokens=0 且 reasoningEstimated=true（不编造数字）");
-            System.out.println("  · 价格表热更新：改 glasshouse-prices.yml 即可，无需改代码、无需重启");
-            System.out.println();
-            System.out.println("非国产但已支持：openai / anthropic / ollama（OpenAI 与 Anthropic 各有独立口径）。");
+            println();
+            println("计量口径说明：");
+            println("  · 通义/智谱/DeepSeek/Kimi/豆包 走 CnUsageNormalizer，各自的 reasoning 字段位置不同");
+            println("  · 供应商不返回推理 token 时，reasoningTokens=0 且 reasoningEstimated=true（不编造数字）");
+            println("  · 价格表热更新：改 glasshouse-prices.yml 即可，无需改代码、无需重启");
+            println();
+            println("非国产但已支持：openai / anthropic / ollama（OpenAI 与 Anthropic 各有独立口径）。");
             return GlasshouseCli.EXIT_OK;
         }
     }

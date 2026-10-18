@@ -27,6 +27,8 @@ import picocli.CommandLine.Spec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.github.nephets.glasshouse.cli.CliConsole.*;
+
 /**
  * {@code glasshouse prices validate} —— 校验外部价格表文件。
  *
@@ -84,12 +86,12 @@ public final class PricesValidateCommand implements Callable<Integer> {
         var loader = new io.github.nephets.glasshouse.core.pricing.PricingTableLoader();
         try {
             var result = loader.loadFromFile(file);
-            System.out.println("✅ 价格表校验通过: " + result.summary());
-            System.out.println("   有效条目: " + result.entries().size());
+            println("✅ 价格表校验通过: " + result.summary());
+            println("   有效条目: " + result.entries().size());
             if (result.hasSkipped()) {
-                System.out.println("   ⚠ 跳过条目 " + result.skipped().size() + " 条（这些条目不会生效）：");
-                result.skipped().forEach(s -> System.out.println("     - " + s));
-                System.out.println("   注意：单条坏数据不会导致整表失效（刻意设计），但这些条目对应的模型成本会记 0。");
+                println("   ⚠ 跳过条目 " + result.skipped().size() + " 条（这些条目不会生效）：");
+                result.skipped().forEach(s -> println("     - " + s));
+                println("   注意：单条坏数据不会导致整表失效（刻意设计），但这些条目对应的模型成本会记 0。");
                 return GlasshouseCli.EXIT_GATE_FAILED;
             }
             return GlasshouseCli.EXIT_OK;
