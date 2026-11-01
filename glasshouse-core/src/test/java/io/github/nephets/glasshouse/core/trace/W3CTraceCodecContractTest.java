@@ -155,6 +155,24 @@ class W3CTraceCodecContractTest {
     }
 
     @Test
+    @DisplayName("版本段短于 2 字符时按未知版本处理：能前向兼容就兼容，flags 太短才返回空")
+    void versionSegmentShorterThanTwoChars() {
+        // "0" 只有 1 个字符，substring(0, 2) 会越界，因此走「原样取」分支；
+        // 它不等于 "00"，于是按未知版本处理——取最后三段做前向兼容。
+        TraceContext decoded =
+                W3CTraceCodec.decodeTraceparent("0-" + TRACE_ID + "-" + SPAN_ID + "-01", null)
+                        .orElseThrow();
+        assertThat(decoded.traceId()).isEqualTo(TRACE_ID);
+        assertThat(decoded.spanId()).isEqualTo(SPAN_ID);
+        assertThat(decoded.traceFlags()).isEqualTo("01");
+
+        // 同样走未知版本分支，但最后一段 "c" 长度不足 2，无法解析出 flags
+        assertThat(W3CTraceCodec.decodeTraceparent("0-a-b-c", null))
+                .as("flags 段不足 2 个字符，无法判定采样与否，退化为新链路")
+                .isEmpty();
+    }
+
+    @Test
     @DisplayName("encode() 返回传播头集合，tracestate 为空时不出现该键")
     void encodeHeaders() {
         TraceContext withState = new TraceContext(TRACE_ID, SPAN_ID, null, "01", "vendor=abc");

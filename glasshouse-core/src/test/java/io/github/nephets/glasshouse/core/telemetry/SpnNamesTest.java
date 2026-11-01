@@ -159,6 +159,40 @@ class SpnNamesTest {
     }
 
     @Test
+    @DisplayName("SwyAttributes：属性名恰好等于前缀 swy. 时拒绝（禁止裸 swy）")
+    void swyAttributesRejectsBarePrefix() {
+        // requirePrefixed 里 startsWith(PREFIX) 先判，因此 "swy"（长度 3）走的是「缺少前缀」那条分支，
+        // 只有恰好等于 "swy."（长度 4）才会走到「禁止裸 swy」这条。
+        assertThatThrownBy(() -> SwyAttributes.string("swy."))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("禁止裸 swy");
+    }
+
+    @Test
+    @DisplayName("OtelProperties：配了真实端点时 otlpExportEnabled 为 true")
+    void otlpExportEnabledWithRealEndpoint() {
+        OtelProperties exporting =
+                new OtelProperties(
+                        true,
+                        " app ",
+                        1.0d,
+                        "  http://localhost:4318/v1/traces  ",
+                        0,
+                        0,
+                        false,
+                        0,
+                        true,
+                        false,
+                        null);
+        assertThat(exporting.otlpExportEnabled()).as("有端点就该导出，否则 OTLP 配置了也不生效").isTrue();
+        assertThat(exporting.otlpEndpoint())
+                .as("端点前后空白被 trim")
+                .isEqualTo("http://localhost:4318/v1/traces");
+        assertThat(exporting.applicationName()).isEqualTo("app");
+        assertThat(OtelProperties.DEFAULTS.otlpExportEnabled()).as("默认不配端点，开箱时不往任何后端推数据").isFalse();
+    }
+
+    @Test
     @DisplayName("OtelProperties：字段兜底与校验")
     void otelPropertiesDefaults() {
         OtelProperties defaults = OtelProperties.DEFAULTS;

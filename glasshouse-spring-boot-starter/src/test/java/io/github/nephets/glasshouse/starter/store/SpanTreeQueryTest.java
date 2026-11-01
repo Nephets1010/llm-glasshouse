@@ -451,6 +451,127 @@ class SpanTreeQueryTest {
     }
 
     @Test
+    @DisplayName("appendAll 传入非空列表时逐条写入")
+    void appendAllWritesNonEmptyList() {
+        Instant start = Instant.parse("2026-10-09T12:00:00Z");
+        SpanRingBuffer.SpanData first =
+                new SpanRingBuffer.SpanData(
+                        TRACE_ID,
+                        "aaaaaaaaaaaaaaaaaaaaaaaa",
+                        null,
+                        "chat m1",
+                        "chat",
+                        "m1",
+                        start,
+                        start.plusMillis(10L),
+                        Map.of(),
+                        "OK",
+                        null);
+        SpanRingBuffer.SpanData second =
+                new SpanRingBuffer.SpanData(
+                        TRACE_ID,
+                        "bbbbbbbbbbbbbbbbbbbbbbbb",
+                        "aaaaaaaaaaaaaaaaaaaaaaaa",
+                        "chat m2",
+                        "chat",
+                        "m2",
+                        start.plusMillis(10L),
+                        start.plusMillis(30L),
+                        Map.of(),
+                        "OK",
+                        null);
+
+        buffer.appendAll(List.of(first, second));
+
+        assertThat(buffer.all()).as("按传入顺序写入").containsExactly(first, second);
+        assertThat(buffer.size()).isEqualTo(2);
+        assertThat(buffer.totalWritten()).isEqualTo(2L);
+    }
+
+    @Test
+    @DisplayName("起止时刻缺失时 durationMillis 返回 0，而不是抛 NPE")
+    void durationMillisWithMissingTimes() {
+        Instant start = Instant.parse("2026-10-09T12:00:00Z");
+        SpanRingBuffer.SpanData noStart =
+                new SpanRingBuffer.SpanData(
+                        TRACE_ID,
+                        "aaaaaaaaaaaaaaaaaaaaaaaa",
+                        null,
+                        "chat a",
+                        "chat",
+                        "a",
+                        null,
+                        start,
+                        Map.of(),
+                        "OK",
+                        null);
+        SpanRingBuffer.SpanData noEnd =
+                new SpanRingBuffer.SpanData(
+                        TRACE_ID,
+                        "bbbbbbbbbbbbbbbbbbbbbbbb",
+                        null,
+                        "chat b",
+                        "chat",
+                        "b",
+                        start,
+                        null,
+                        Map.of(),
+                        "OK",
+                        null);
+        SpanRingBuffer.SpanData noTime =
+                new SpanRingBuffer.SpanData(
+                        TRACE_ID,
+                        "cccccccccccccccccccccccc",
+                        null,
+                        "chat c",
+                        "chat",
+                        "c",
+                        null,
+                        null,
+                        Map.of(),
+                        "OK",
+                        null);
+
+        assertThat(noStart.durationMillis()).as("结束中的 span 还没落地 endTime").isZero();
+        assertThat(noEnd.durationMillis()).isZero();
+        assertThat(noTime.durationMillis()).isZero();
+    }
+
+    @Test
+    @DisplayName("父子互引成环时走兜底，把每条 span 平铺成根返回")
+    void cyclicParentsFallBackToFlatRoots() {
+        // A 的父是 B、B 的父是 A：两条都「找得到父节点」，于是 roots 为空。
+        // 没有这个兜底，成环的链路会整棵树消失（用户看到「未找到 traceId」），
+        // 而实际上 span 就在缓冲里。
+        append(
+                "aaaaaaaaaaaaaaaaaaaaaaaa",
+                "bbbbbbbbbbbbbbbbbbbbbbbb",
+                "chat a",
+                10L,
+                null,
+                null,
+                null,
+                Map.of());
+        append(
+                "bbbbbbbbbbbbbbbbbbbbbbbb",
+                "aaaaaaaaaaaaaaaaaaaaaaaa",
+                "chat b",
+                20L,
+                null,
+                null,
+                null,
+                Map.of());
+
+        List<SpanTreeQuery.SpanNode> roots = query.tree(TRACE_ID);
+
+        assertThat(roots).as("成环时两条 span 都必须可见，不能一棵都不返回").hasSize(2);
+        assertThat(roots)
+                .extracting(n -> n.data().spanId())
+                .containsExactlyInAnyOrder("aaaaaaaaaaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbbbbbbbbbb");
+        assertThat(roots).allSatisfy(n -> assertThat(n.children()).as("兜底路径平铺，不递归").isEmpty());
+    }
+
+    @Test
     @DisplayName("byStartTime 排序：null 时间排最后")
     void byStartTimeOrdering() {
         Instant start = Instant.parse("2026-10-09T12:00:00Z");
