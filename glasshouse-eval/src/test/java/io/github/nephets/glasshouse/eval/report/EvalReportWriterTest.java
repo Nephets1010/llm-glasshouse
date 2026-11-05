@@ -293,4 +293,62 @@ class EvalReportWriterTest {
             }
         }
     }
+
+    @Test
+    @DisplayName("★ 失败用例的错误串同时进 Markdown 与 JSON；Markdown 里竖线被替换以免撑破表格")
+    void failedCaseErrorIsRenderedInBothFormats() throws Exception {
+        EvalReport report =
+                new EvalRunner(
+                                c -> {
+                                    throw new IllegalStateException("上游 429 | 限流");
+                                })
+                        .run(
+                                new JsonlDataset(
+                                        "ds",
+                                        "v1",
+                                        List.of(
+                                                EvalCase.of(
+                                                        "f-1",
+                                                        Map.of("question", "q"),
+                                                        Map.of("contains", List.of("a")),
+                                                        "售后",
+                                                        "easy",
+                                                        true,
+                                                        null)),
+                                        null),
+                                EvalConfig.of("mock/mock-chat", "v3"));
+
+        String md = EvalReportWriter.toMarkdown(report, GateParser.evaluate(report, null));
+        assertThat(md)
+                .as("★ 表格里出现裸竖线会把列数打乱，必须替换成斜杠")
+                .contains("`f-1`")
+                .contains("上游 429 / 限流")
+                .doesNotContain("429 | 限流");
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> parsed =
+                MAPPER.readValue(EvalReportWriter.toJson(report, null), Map.class);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> cases = (List<Map<String, Object>>) parsed.get("cases");
+        assertThat(cases).hasSize(1);
+        assertThat(cases.get(0)).containsEntry("passed", Boolean.FALSE);
+        assertThat((String) cases.get(0).get("error"))
+                .as("★ JSON 侧保留原始错误串（给机器读，不需要迁就表格）")
+                .isEqualTo("IllegalStateException: 上游 429 | 限流");
+    }
+
+    @Test
+    @DisplayName("★ 门禁规则引用的指标缺失时，Markdown 用破折号而不是 null")
+    void missingMetricShowsDashInGateTable() {
+        EvalReport report = EvalReport.empty("ds", "v1");
+        GateParser.Verdict verdict = GateParser.evaluate(report, "accuracy>0.9");
+
+        String md = EvalReportWriter.toMarkdown(report, verdict);
+
+        assertThat(md)
+                .as("★ 报告里出现 null 会让读者以为生成失败；缺分应显式标成「无数据」")
+                .contains("| — |")
+                .contains("`accuracy > 0.9`")
+                .doesNotContain("| null |");
+    }
 }
