@@ -107,7 +107,16 @@ public final class GlasshouseCli implements Callable<Integer> {
      * @param args 命令行参数
      */
     public static void main(String[] args) {
-        GlasshouseCli root = new GlasshouseCli();
+        System.exit(newCommandLine(new GlasshouseCli()).execute(args));
+    }
+
+    /**
+     * 装配入口命令线：把两个异常处理器集中在一处，main 与入口测试共用同一份接线。
+     *
+     * @param root 根命令实例
+     * @return 已装好异常处理器的命令线
+     */
+    static CommandLine newCommandLine(GlasshouseCli root) {
         CommandLine commandLine =
                 new CommandLine(root)
                         .setCaseInsensitiveEnumValuesAllowed(true)
@@ -131,7 +140,7 @@ public final class GlasshouseCli implements Callable<Integer> {
                     cmd.usage(cmd.getErr());
                     return EXIT_USAGE_ERROR;
                 });
-        System.exit(commandLine.execute(args));
+        return commandLine;
     }
 
     /**
