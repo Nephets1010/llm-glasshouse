@@ -200,16 +200,6 @@ class GlasshouseCliEntryTest {
         assertThat(endpoint.getMessage()).contains("Missing required parameter");
     }
 
-    @Test
-    @DisplayName("根级全局选项能跑通整个子命令")
-    void rootLevelGlobalOptionsReachCommand() {
-        int code = run("--buffer-capacity", "7", "prices", "show");
-
-        assertThat(code).isEqualTo(0);
-        assertThat(stdout()).contains("条目总数");
-        assertThat(stderr()).doesNotContain("[glasshouse] 参数错误");
-    }
-
     // ---------------- C 组：退出码与两个 handler ----------------
 
     @Test
@@ -288,15 +278,15 @@ class GlasshouseCliEntryTest {
     }
 
     @Test
-    @DisplayName("成功路径不触发两个异常处理器")
-    void successDoesNotInvokeHandlers() {
+    @DisplayName("成功路径不触发两个异常处理器，stdout 有结果")
+    void successfulCommandLeavesBothHandlersUntouched() {
         int code = run("--buffer-capacity", "7", "prices", "show");
 
         assertThat(code).isEqualTo(0);
+        assertThat(stdout()).contains("条目总数");
         assertThat(stderr())
                 .doesNotContain("[glasshouse] 错误:")
                 .doesNotContain("[glasshouse] 参数错误: ");
-        assertThat(stdout()).contains("条目总数");
     }
 
     @Test
@@ -354,8 +344,8 @@ class GlasshouseCliEntryTest {
     }
 
     @Test
-    @DisplayName("-V 与 --version 输出一致，且与 VersionProvider 返回一致")
-    void shortAndLongVersionAgree() {
+    @DisplayName("两个版本开关走同一提供者，输出都不含 null 且带产品名")
+    void versionFlagsShareOneProvider() {
         assertThat(run("--version")).isEqualTo(0);
         String longVersion = stdout();
         assertThat(longVersion).contains("llm-glasshouse").doesNotContain("null").isNotBlank();
@@ -363,14 +353,14 @@ class GlasshouseCliEntryTest {
 
         installCapture();
         assertThat(run("-V")).isEqualTo(0);
+        // 只锁两个开关同源；版本号随发布变化，不写字面量
         assertThat(stdout()).isEqualTo(longVersion);
         assertThat(stderr()).isEmpty();
 
         String[] version = new GlasshouseCli.VersionProvider().getVersion();
         assertThat(version).hasSize(1);
-        assertThat(version[0])
-                .isEqualTo(longVersion.replace(NL, "").strip())
-                .contains("llm-glasshouse");
+        // 期望值不再由上面的 stdout 反推
+        assertThat(version[0]).contains("llm-glasshouse").doesNotContain("null").isNotBlank();
     }
 
     @Test

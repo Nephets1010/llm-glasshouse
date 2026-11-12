@@ -24,12 +24,12 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** 临时定位用：逐层拆开评测链路的每一步。 */
-class ScratchProbeTest {
+/** KeywordRecallMetric 与 EvalRunner.scoreCase 的口径核对：三个关键词命中两个时得分为 2/3。 */
+class KeywordRecallMetricScoringTest {
 
     @Test
-    @DisplayName("逐层验证关键词召回")
-    void probe() {
+    @DisplayName("三个关键词命中两个，直接算分与经 scoreCase 算分都是 2/3")
+    void keywordRecallCountsTwoOfThreeKeywords() {
         EvalCase c =
                 EvalCase.of(
                         "k",

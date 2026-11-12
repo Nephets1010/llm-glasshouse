@@ -29,7 +29,6 @@ import io.github.nephets.glasshouse.core.eval.EvalReport;
 import io.github.nephets.glasshouse.core.eval.EvalResult;
 import io.github.nephets.glasshouse.core.eval.EvalRunner;
 import io.github.nephets.glasshouse.core.eval.JsonlDataset;
-import io.github.nephets.glasshouse.core.eval.Metric;
 import io.github.nephets.glasshouse.core.usage.Usage;
 import io.github.nephets.glasshouse.eval.gate.GateParser;
 
@@ -280,18 +279,16 @@ class EvalReportWriterTest {
     }
 
     @Test
-    @DisplayName("Metric 名称常量与报告用的一致")
-    void metricNamesMatchReport() {
+    @DisplayName("报告指标段写出三个指标名，与源码常量无关")
+    void markdownListsMetricNamesFromContract() {
         EvalReport report = sampleReport();
-        for (String name :
-                List.of(
-                        Metric.NAME_ACCURACY,
-                        Metric.NAME_KEYWORD_RECALL,
-                        Metric.NAME_CONTAINMENT)) {
-            if (report.scoreOf(name).signum() > 0) {
-                assertThat(EvalReportWriter.toMarkdown(report, null)).contains(name);
-            }
-        }
+        String md = EvalReportWriter.toMarkdown(report, null);
+
+        // 期望值写字面量，不取 Metric.NAME_*；得分为 0 的指标也要出现在报告里
+        assertThat(md)
+                .contains("| accuracy |")
+                .contains("| keywordRecall |")
+                .contains("| containment |");
     }
 
     @Test
