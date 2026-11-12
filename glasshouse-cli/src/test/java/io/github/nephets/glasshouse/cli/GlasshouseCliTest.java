@@ -101,7 +101,6 @@ class GlasshouseCliTest {
      * @throws IOException 写文件失败
      */
     private Path writeAgentSpanFile() throws IOException {
-        Instant start = Instant.parse("2026-10-09T12:00:00Z");
         SpanRingBuffer buffer = new SpanRingBuffer(100);
 
         buffer.append(
@@ -188,7 +187,6 @@ class GlasshouseCliTest {
         }
         Path file = tempDir.resolve("spans.jsonl");
         Files.writeString(file, sb.toString(), StandardCharsets.UTF_8);
-        assertThat(start).isNotNull();
         return file;
     }
 
@@ -616,7 +614,8 @@ class GlasshouseCliTest {
         int code = run("eval", "run", "--dataset", "no-such-dataset", "--replay", "x.jsonl");
         assertThat(code)
                 .as("★ 回放文件读不了是配置错误，必须 exit 2 而不是 exit 1")
-                .isEqualTo(GlasshouseCli.EXIT_USAGE_ERROR);
+                .isEqualTo(GlasshouseCli.EXIT_USAGE_ERROR)
+                .isEqualTo(2);
         assertThat(stderr()).as("★ 错误信息必须点明是哪个文件读不了").contains("x.jsonl").contains("回放");
     }
 
